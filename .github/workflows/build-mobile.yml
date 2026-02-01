@@ -1,1 +1,69 @@
-...
+name: Build Mobile Apps
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Flet
+        run: pip install flet
+      - name: Build APK
+        run: flet build apk --verbose --project "P2P Secure Chat" --org "com.securechat"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: build/apk/*.apk
+          retention-days: 90
+
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Flet
+        run: pip install flet
+      - name: Build IPA
+        run: flet build ipa --verbose --no-codesign --project "P2P Secure Chat" --org "com.securechat"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: build/ipa/*.ipa
+          retention-days: 90
+
+  create-release:
+    name: Create Release
+    needs: [build-android, build-ios]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-release
+          path: ./artifacts
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-release
+          path: ./artifacts
+      - uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          files: ./artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

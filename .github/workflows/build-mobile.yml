@@ -2,9 +2,9 @@ name: Build Mobile Apps
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -12,15 +12,22 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+      
       - name: Install Flet
         run: pip install flet
+      
       - name: Build APK
-        run: flet build apk --verbose --project "P2P Secure Chat" --org "com.securechat"
-      - uses: actions/upload-artifact@v4
+        run: flet build apk --verbose --project "P2PSecureChat" --org "com.securechat"
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: android-release
           path: build/apk/*.apk
@@ -30,15 +37,22 @@ jobs:
     name: Build iOS IPA
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+      
       - name: Install Flet
         run: pip install flet
+      
       - name: Build IPA
-        run: flet build ipa --verbose --no-codesign --project "P2P Secure Chat" --org "com.securechat"
-      - uses: actions/upload-artifact@v4
+        run: flet build ipa --verbose --no-codesign --project "P2PSecureChat" --org "com.securechat"
+      
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
         with:
           name: ios-release
           path: build/ipa/*.ipa
@@ -52,15 +66,20 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download Android artifact
+        uses: actions/download-artifact@v4
         with:
           name: android-release
           path: ./artifacts
-      - uses: actions/download-artifact@v4
+      
+      - name: Download iOS artifact
+        uses: actions/download-artifact@v4
         with:
           name: ios-release
           path: ./artifacts
-      - uses: softprops/action-gh-release@v1
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ github.run_number }}
           name: Release v${{ github.run_number }}
